@@ -13,7 +13,7 @@ import {
 import { GDCV_ENERGY_MONTHLY_CANONICAL } from "@/data/gdcv-mock"
 import {
   consumptionHistoryMock,
-  getParkEnergySeries,
+  GDD_ENERGY_MONTHLY_CANONICAL,
 } from "@/data/gdd-performance-mock"
 import {
   gddRoiHistorico,
@@ -97,7 +97,7 @@ function buildTarifasExport(): DashboardExportFile {
 function buildGeneracionExport(variant: DashboardDownloadsVariant): DashboardExportFile {
   const rows =
     variant === "gdd"
-      ? getParkEnergySeries("todo").map((row) => [row.label, `${row.generated} MWh`])
+      ? GDD_ENERGY_MONTHLY_CANONICAL.map((row) => [row.label, `${row.generated} MWh`])
       : GDCV_ENERGY_MONTHLY_CANONICAL.map((row) => [row.label, `${row.generated} MWh`])
 
   return {

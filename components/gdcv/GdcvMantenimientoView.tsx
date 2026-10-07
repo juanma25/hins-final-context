@@ -1,14 +1,26 @@
 // components/gdcv/GdcvMantenimientoView.tsx
 import { ParkMantenimientoView } from "@/components/mantenimiento/ParkMantenimientoView"
-import { gdcvMantenimientoHistorialMock } from "@/data/mantenimiento-mock"
-import { gdcvParkName } from "@/data/gdcv-mock"
+import type { Proyecto } from "@/lib/api/types"
+import { listMantenimiento } from "@/lib/api/mantenimiento"
 
-export function GdcvMantenimientoView() {
+interface GdcvMantenimientoViewProps {
+  proyecto: Proyecto
+  parqueId: string
+  parqueNombreExterno: string | null
+}
+
+export async function GdcvMantenimientoView({
+  proyecto,
+  parqueId,
+  parqueNombreExterno,
+}: GdcvMantenimientoViewProps) {
+  const data = await listMantenimiento(parqueId)
+
   return (
     <ParkMantenimientoView
-      parkName={gdcvParkName}
+      parkName={parqueNombreExterno ?? proyecto.nombre}
       modelType="GDCV"
-      data={gdcvMantenimientoHistorialMock}
+      data={data}
     />
   )
 }

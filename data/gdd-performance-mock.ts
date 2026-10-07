@@ -1,18 +1,6 @@
 // data/gdd-performance-mock.ts
 
-import {
-  getChartRangeSubtitle,
-  sliceChartRangeSeries,
-} from "@/lib/chart-range-resolve"
 import { formatCurrency } from "@/lib/format-currency"
-import type { ChartRangeChip } from "@/types/chart-range"
-
-export type PerformancePeriod = ChartRangeChip
-
-export type ParkEnergyRow = {
-  label: string
-  generated: number
-}
 
 /** Label canónico — ParkDetailsCard (GDD). */
 export const GDD_OPERATIONS_START_METRIC_LABEL = "Fecha de Inicio"
@@ -20,11 +8,19 @@ export const GDD_OPERATIONS_START_METRIC_LABEL = "Fecha de Inicio"
 /** Inicio de operaciones — Parque General Roca (GDD). */
 export const gddOperationsStartLabel = "Mayo 2024"
 
+export type ParkEnergyRow = {
+  label: string
+  generated: number
+}
+
 /**
- * Serie mensual canónica desde inicio de operaciones (May 25 → Abr 26).
- * 3M / 6M / 1A / TODO derivan por slice desde aquí.
+ * Serie mensual mock — usada solo por el export CSV de "Descargar todo"
+ * (lib/dashboard-downloads.ts), fuera de alcance de
+ * specs/002-park-energy-chart (que solo reemplaza el gráfico de
+ * ParkPerformanceView, ver spec.md Assumptions). El gráfico ya no usa esta
+ * serie — ver lib/park-energy-series.ts para los datos reales.
  */
-const PARK_ENERGY_MONTHLY: ParkEnergyRow[] = [
+export const GDD_ENERGY_MONTHLY_CANONICAL: ParkEnergyRow[] = [
   { label: "May 25", generated: 410 },
   { label: "Jun 25", generated: 450 },
   { label: "Jul 25", generated: 490 },
@@ -37,14 +33,6 @@ const PARK_ENERGY_MONTHLY: ParkEnergyRow[] = [
   { label: "Feb 26", generated: 690 },
   { label: "Mar 26", generated: 610 },
   { label: "Abr 26", generated: 830 },
-]
-
-/** 1M: semanal — ventana reciente dentro de abril. */
-const PARK_ENERGY_WEEKLY: ParkEnergyRow[] = [
-  { label: "1–7 Abr", generated: 198 },
-  { label: "8–14 Abr", generated: 205 },
-  { label: "15–21 Abr", generated: 192 },
-  { label: "22–30 Abr", generated: 235 },
 ]
 
 export const highlightAprilCardMock = {
@@ -66,14 +54,6 @@ export const gddParkDetails = {
     { label: GDD_OPERATIONS_START_METRIC_LABEL, value: gddOperationsStartLabel },
   ],
 } as const
-
-export function getParkEnergySeries(period: PerformancePeriod): ParkEnergyRow[] {
-  return sliceChartRangeSeries(period, PARK_ENERGY_MONTHLY, PARK_ENERGY_WEEKLY)
-}
-
-export function getParkEnergyChartSubtitle(period: PerformancePeriod): string {
-  return getChartRangeSubtitle(period, gddOperationsStartLabel)
-}
 
 export const generationSparklinePoints = [
   { i: 0, value: 18 },

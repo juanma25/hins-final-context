@@ -285,3 +285,15 @@ lib/
 - **Backward compatibility:** Once real data is live, can remove all `*-mock.ts` files. Keep `new-project-mock.ts` as it defines ProjectType enum.
 - **Testing:** Create fixtures that match API response shapes before integration.
 - **Error states:** Charts/tables should gracefully handle missing data (empty states, spinners).
+
+## Configuración de administrador (specs/013-admin-config-tarifas-costos)
+
+Solo `HINS_ADMIN` (guard `requireAdmin()` en `lib/api/guards.ts`; el backend responde 403 como defensa final):
+
+| Pantalla | Ruta | Endpoints |
+|---|---|---|
+| Tarifas | `/main/tarifas` | `/tarifas` (GET/POST), `/tarifas/{id}` (PATCH/DELETE) |
+| Tipos de cambio | `/main/tipos-cambio` | `/tipos-cambio` (GET/POST), `/tipos-cambio/{id}` (PATCH/DELETE) |
+| Costos | `/gdd\|gdc\|gdcv/costos?proyectoId=` | `/costos` (GET/POST), `/costos/{id}` (PATCH/DELETE) |
+
+Piezas compartidas: `components/admin/*` (lista paginada, formulario, confirmación), `lib/crud-action.ts`, `lib/api/paginated.ts`, `lib/admin-nav.ts`.

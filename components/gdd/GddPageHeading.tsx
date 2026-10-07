@@ -8,7 +8,7 @@ import { ModelBadge } from "@/components/ui/model-badge"
 import { RoiCurrencyTabs } from "@/components/ui/roi-currency-tabs"
 import { TabsForBlocks } from "@/components/ui/tabs-for-blocks"
 
-import { parkName } from "@/data/gdd-performance-mock"
+import { useDashboardParkName } from "@/hooks/use-dashboard-park-name"
 
 const navTabs = [
   { value: "/gdd/performance", label: "Performance" },
@@ -25,6 +25,7 @@ export function GddPageHeading() {
   const searchParams = useSearchParams()
   const currency = searchParams.get("currency") ?? "usd"
   const isRoiView = pathname === "/gdd/roi"
+  const parkName = useDashboardParkName("Parque GDD")
 
   function handleNavChange(path: string) {
     const params = searchParams.toString()

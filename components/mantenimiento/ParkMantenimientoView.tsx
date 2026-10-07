@@ -1,12 +1,12 @@
 // components/mantenimiento/ParkMantenimientoView.tsx
 import { MantenimientoHistorialTable } from "@/components/mantenimiento/MantenimientoHistorialTable"
 import { ModelBadge, type ParkModel } from "@/components/ui/model-badge"
-import type { MantenimientoHistorialRow } from "@/data/mantenimiento-mock"
+import type { RegistroMantenimiento } from "@/lib/api/types"
 
 interface ParkMantenimientoViewProps {
   parkName: string
   modelType: ParkModel
-  data: MantenimientoHistorialRow[]
+  data: RegistroMantenimiento[]
 }
 
 export function ParkMantenimientoView({

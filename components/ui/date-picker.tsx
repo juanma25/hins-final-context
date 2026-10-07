@@ -13,12 +13,14 @@ import { cn } from "@/lib/utils"
 import { CalendarIcon, ChevronDownIcon } from "lucide-react"
 
 export interface DatePickerProps {
-  value: Date
+  value: Date | undefined
   onValueChange: (date: Date) => void
   /** Fechas deshabilitadas en el calendario. */
   disabled?: (date: Date) => boolean
   /** Formato del label en el trigger. */
   formatLabel?: (date: Date) => string
+  /** Texto del trigger cuando `value` es `undefined` (sin selección aún). */
+  placeholder?: string
   className?: string
   align?: "start" | "center" | "end"
 }
@@ -28,6 +30,7 @@ export function DatePicker({
   onValueChange,
   disabled,
   formatLabel = formatChartDayPicker,
+  placeholder = "Seleccionar fecha",
   className,
   align = "start",
 }: DatePickerProps) {
@@ -43,7 +46,7 @@ export function DatePicker({
           )}
         >
           <CalendarIcon className="size-4 text-muted-foreground" aria-hidden />
-          {formatLabel(value)}
+          {value ? formatLabel(value) : placeholder}
           <ChevronDownIcon
             className="ml-auto size-4 text-muted-foreground"
             aria-hidden

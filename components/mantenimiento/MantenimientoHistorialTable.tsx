@@ -19,7 +19,6 @@ import {
 } from "lucide-react"
 
 import { MantenimientoDetailSheet } from "@/components/mantenimiento/MantenimientoDetailSheet"
-import { StatusBadge } from "@/components/ui/status-badge"
 import { Button } from "@/components/ui/button"
 import {
   Table,
@@ -29,7 +28,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import type { MantenimientoHistorialRow } from "@/data/mantenimiento-mock"
+import type { RegistroMantenimiento } from "@/lib/api/types"
+import { formatPeriodoLabel } from "@/lib/format-periodo"
+import { formatCurrency } from "@/lib/format-currency"
 import { stickyStartCellClassName } from "@/lib/table-utils"
 import { cn } from "@/lib/utils"
 
@@ -37,13 +38,8 @@ function formatCantidad(n: number): string {
   return n === 1 ? "1 tarea" : `${n} tareas`
 }
 
-function parseMoneyDisplay(value: string): number {
-  const digits = value.replace(/[^\d]/g, "")
-  return digits ? parseInt(digits, 10) : 0
-}
-
 function sortableHeader(
-  column: Column<MantenimientoHistorialRow, unknown>,
+  column: Column<RegistroMantenimiento, unknown>,
   label: string
 ) {
   const sorted = column.getIsSorted()
@@ -82,22 +78,17 @@ function sortableHeader(
   )
 }
 
-const columns: ColumnDef<MantenimientoHistorialRow>[] = [
+const columns: ColumnDef<RegistroMantenimiento>[] = [
   {
-    accessorKey: "id",
+    accessorKey: "periodo",
     enableHiding: false,
     enableSorting: true,
     meta: { label: "Período", sticky: "start" },
     header: ({ column }) => sortableHeader(column, "Período"),
     cell: ({ row }) => (
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm font-medium text-muted-foreground">
-          {row.original.periodo}
-        </span>
-        {row.original.enCurso ? (
-          <StatusBadge status="current">En Curso</StatusBadge>
-        ) : null}
-      </div>
+      <span className="text-sm font-medium text-muted-foreground">
+        {formatPeriodoLabel(row.original.periodo)}
+      </span>
     ),
   },
   {
@@ -113,30 +104,27 @@ const columns: ColumnDef<MantenimientoHistorialRow>[] = [
     ),
   },
   {
-    accessorKey: "costoAsociado",
+    accessorKey: "costosAsociados",
     enableSorting: true,
-    sortingFn: (rowA, rowB) =>
-      parseMoneyDisplay(rowA.original.costoAsociado) -
-      parseMoneyDisplay(rowB.original.costoAsociado),
     meta: { label: "Costos Asociados" },
     header: ({ column }) => sortableHeader(column, "Costos Asociados"),
     cell: ({ row }) => (
       <span className="text-sm tabular-nums text-foreground">
-        {row.original.costoAsociado}
+        {formatCurrency(row.original.costosAsociados, "ars", "full")}
       </span>
     ),
   },
 ]
 
 interface MantenimientoHistorialTableProps {
-  data: MantenimientoHistorialRow[]
+  data: RegistroMantenimiento[]
 }
 
 export function MantenimientoHistorialTable({
   data,
 }: MantenimientoHistorialTableProps) {
   const [sorting, setSorting] = useState<SortingState>([])
-  const [selectedRow, setSelectedRow] = useState<MantenimientoHistorialRow | null>(
+  const [selectedRow, setSelectedRow] = useState<RegistroMantenimiento | null>(
     null
   )
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -150,7 +138,7 @@ export function MantenimientoHistorialTable({
     getSortedRowModel: getSortedRowModel(),
   })
 
-  function handleRowClick(row: MantenimientoHistorialRow) {
+  function handleRowClick(row: RegistroMantenimiento) {
     setSelectedRow(row)
     setSheetOpen(true)
   }

@@ -9,7 +9,8 @@
     "lint": "eslint",
     "figma:import": "ts-node scripts/figma-flow-builder.ts",
     "figma:explore": "ts-node scripts/figma-explorer.ts",
-    "flow:from-images": "ts-node scripts/flow-from-images.ts"
+    "flow:from-images": "ts-node scripts/flow-from-images.ts",
+    "test": "vitest run"
   },
   "dependencies": {
     "@tanstack/react-table": "^8.21.3",
@@ -40,6 +41,7 @@
     "node-fetch": "^3.3.2",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.10"
   }
 }

@@ -15,7 +15,7 @@ import { sheetContentClassName } from "@/lib/sheet-layout"
 import { TabsForBlocks } from "@/components/ui/tabs-for-blocks"
 import { BellIcon, DownloadIcon, SearchIcon } from "lucide-react"
 
-import { parkName } from "@/data/gdd-performance-mock"
+import { useDashboardParkName } from "@/hooks/use-dashboard-park-name"
 
 const navTabs = [
   { value: "/gdd/performance", label: "Performance" },
@@ -26,6 +26,7 @@ export function GddViewHeader() {
   const pathname = usePathname()
   const router = useRouter()
   const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const parkName = useDashboardParkName("Parque GDD")
 
   return (
     <div className="shrink-0 bg-background shadow-xs">

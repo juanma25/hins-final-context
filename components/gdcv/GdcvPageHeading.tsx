@@ -7,7 +7,7 @@ import { DashboardDownloadsMenu } from "@/components/layout/DashboardDownloadsMe
 import { ModelBadge } from "@/components/ui/model-badge"
 import { RoiCurrencyTabs } from "@/components/ui/roi-currency-tabs"
 import { TabsForBlocks } from "@/components/ui/tabs-for-blocks"
-import { gdcvParkName } from "@/data/gdcv-mock"
+import { useDashboardParkName } from "@/hooks/use-dashboard-park-name"
 
 const navTabs = [
   { value: "/gdcv/performance", label: "Performance" },
@@ -24,6 +24,7 @@ export function GdcvPageHeading() {
   const searchParams = useSearchParams()
   const currency = searchParams.get("currency") ?? "usd"
   const isRoiView = pathname === "/gdcv/roi"
+  const gdcvParkName = useDashboardParkName("Parque GDCV")
 
   function handleNavChange(path: string) {
     const params = searchParams.toString()

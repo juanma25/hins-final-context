@@ -2,11 +2,13 @@
 "use client"
 
 import { SheetContentDetail } from "@/components/ui/sheet-ops"
-import type { MantenimientoHistorialRow } from "@/data/mantenimiento-mock"
+import type { RegistroMantenimiento } from "@/lib/api/types"
 import { formatMantenimientoSheetTitle } from "@/lib/mantenimiento-format"
+import { formatPeriodoLabel } from "@/lib/format-periodo"
+import { formatNullable } from "@/lib/utils"
 
 interface MantenimientoDetailSheetProps {
-  row: MantenimientoHistorialRow | null
+  row: RegistroMantenimiento | null
   open: boolean
   onOpenChange: (open: boolean) => void
 }
@@ -22,11 +24,11 @@ export function MantenimientoDetailSheet({
     <SheetContentDetail
       open={open}
       onOpenChange={onOpenChange}
-      title={formatMantenimientoSheetTitle(row.periodo)}
+      title={formatMantenimientoSheetTitle(formatPeriodoLabel(row.periodo))}
       showFooter={false}
     >
       <p className="text-sm text-muted-foreground">
-        Detalle de mantenimiento — próximamente.
+        {formatNullable(row.detalle)}
       </p>
     </SheetContentDetail>
   )

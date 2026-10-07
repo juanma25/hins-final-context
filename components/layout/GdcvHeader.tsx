@@ -17,11 +17,12 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { SearchIcon } from "lucide-react"
 
-import { gdcvParkName } from "@/data/gdcv-mock"
+import { useDashboardParkName } from "@/hooks/use-dashboard-park-name"
 
 export function GdcvHeader() {
   const pathname = usePathname()
   const isSocioFlow = pathname.startsWith("/gdcv/socio")
+  const gdcvParkName = useDashboardParkName("Parque GDCV")
 
   return (
     <header className="sticky top-0 z-40 shrink-0 bg-white shadow-xs">

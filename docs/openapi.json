@@ -1,0 +1,640 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "HINS Backend API",
+    "version": "1.0.0",
+    "description": "Contrato de API generado a partir del código fuente (no hay Swagger auto-generado en el backend). Todos los endpoints requieren `Authorization: Bearer <JWT>` salvo `/auth/register` y `/auth/login`."
+  },
+  "servers": [
+    { "url": "http://localhost:3000", "description": "Local" }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "UsuarioRole": {
+        "type": "string",
+        "enum": ["HINS_ADMIN", "GDD_OWNER", "AGC", "SOCIO"]
+      },
+      "ModeloNegocio": {
+        "type": "string",
+        "enum": ["GDD", "GDC", "GDCV"]
+      },
+      "TipoCargo": {
+        "type": "string",
+        "enum": ["CON_POTENCIA", "SIN_POTENCIA"]
+      },
+      "ModeloSincronizado": {
+        "type": "string",
+        "enum": ["ESTACIONES", "DISPOSITIVOS", "ENERGIA", "ALARMAS"]
+      },
+      "EstadoAlarma": {
+        "type": "string",
+        "enum": ["ACTIVA", "LIMPIA"]
+      },
+      "Dispositivo": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "parqueId": { "type": "string" },
+          "externalDeviceId": { "type": "string" },
+          "serialNumber": { "type": "string", "nullable": true },
+          "nombre": { "type": "string", "nullable": true },
+          "tipoId": { "type": "integer" },
+          "modelo": { "type": "string", "nullable": true },
+          "softwareVersion": { "type": "string", "nullable": true },
+          "datosMonitoreo": { "type": "object", "nullable": true, "additionalProperties": true },
+          "ultimaSincronizacion": { "type": "string", "format": "date-time", "nullable": true }
+        }
+      },
+      "Alarma": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "parqueId": { "type": "string" },
+          "dispositivoId": { "type": "string", "nullable": true },
+          "externalAlarmId": { "type": "integer" },
+          "esnCodeExterno": { "type": "string", "nullable": true },
+          "nombre": { "type": "string" },
+          "causa": { "type": "string", "nullable": true },
+          "causaId": { "type": "integer", "nullable": true },
+          "tipo": { "type": "integer" },
+          "severidad": { "type": "integer" },
+          "fechaGenerada": { "type": "string", "format": "date-time" },
+          "estado": { "$ref": "#/components/schemas/EstadoAlarma" },
+          "fechaLimpiada": { "type": "string", "format": "date-time", "nullable": true },
+          "ultimaSincronizacion": { "type": "string", "format": "date-time" }
+        }
+      },
+      "EstadoEjecucionSincronizacion": {
+        "type": "string",
+        "enum": ["EN_CURSO", "EXITOSO", "FALLIDO"]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "statusCode": { "type": "integer" },
+          "message": { "type": "string" }
+        },
+        "required": ["statusCode", "message"]
+      },
+      "RegisterDto": {
+        "type": "object",
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "nombre": { "type": "string" },
+          "password": { "type": "string", "minLength": 8 }
+        },
+        "required": ["email", "nombre", "password"]
+      },
+      "LoginDto": {
+        "type": "object",
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "password": { "type": "string" }
+        },
+        "required": ["email", "password"]
+      },
+      "LoginResponse": {
+        "type": "object",
+        "properties": {
+          "access_token": { "type": "string" }
+        },
+        "required": ["access_token"]
+      },
+      "Usuario": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "email": { "type": "string" },
+          "nombre": { "type": "string" },
+          "role": { "$ref": "#/components/schemas/UsuarioRole" },
+          "activo": { "type": "boolean" }
+        }
+      },
+      "UsuarioMe": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "email": { "type": "string" },
+          "nombre": { "type": "string" },
+          "role": { "$ref": "#/components/schemas/UsuarioRole" }
+        }
+      },
+      "UpdateUsuarioDto": {
+        "type": "object",
+        "properties": {
+          "nombre": { "type": "string" },
+          "role": { "$ref": "#/components/schemas/UsuarioRole" },
+          "activo": { "type": "boolean" }
+        }
+      },
+      "CreateProyectoDto": {
+        "type": "object",
+        "properties": {
+          "nombre": { "type": "string" },
+          "modelo": { "$ref": "#/components/schemas/ModeloNegocio" },
+          "ubicacion": { "type": "string" }
+        },
+        "required": ["nombre", "modelo", "ubicacion"]
+      },
+      "Proyecto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "nombre": { "type": "string" },
+          "modelo": { "$ref": "#/components/schemas/ModeloNegocio" },
+          "ubicacion": { "type": "string" },
+          "fechaAlta": { "type": "string", "format": "date-time" },
+          "activo": { "type": "boolean" }
+        }
+      },
+      "CreateParqueDto": {
+        "type": "object",
+        "properties": {
+          "proyectoId": { "type": "string" },
+          "potenciaTotalKwp": { "type": "number" },
+          "fechaPuestaEnMarcha": { "type": "string", "format": "date" }
+        },
+        "required": ["proyectoId", "potenciaTotalKwp", "fechaPuestaEnMarcha"]
+      },
+      "Parque": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "proyectoId": { "type": "string" },
+          "potenciaTotalKwp": { "type": "number" },
+          "fechaPuestaEnMarcha": { "type": "string", "format": "date-time" },
+          "stationExternalId": { "type": "string", "nullable": true },
+          "nombreExterno": { "type": "string", "nullable": true },
+          "direccion": { "type": "string", "nullable": true },
+          "longitud": { "type": "number", "nullable": true },
+          "latitud": { "type": "number", "nullable": true },
+          "contactoNombre": { "type": "string", "nullable": true },
+          "contactoInfo": { "type": "string", "nullable": true }
+        }
+      },
+      "CreateSocioDto": {
+        "type": "object",
+        "properties": {
+          "parqueId": { "type": "string" },
+          "nombre": { "type": "string" },
+          "participacionPorcentaje": { "type": "number" },
+          "tipoCargo": { "$ref": "#/components/schemas/TipoCargo" },
+          "medidorNumero": { "type": "string" }
+        },
+        "required": ["parqueId", "nombre", "participacionPorcentaje", "tipoCargo", "medidorNumero"]
+      },
+      "Socio": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "parqueId": { "type": "string" },
+          "nombre": { "type": "string" },
+          "participacionPorcentaje": { "type": "number" },
+          "tipoCargo": { "$ref": "#/components/schemas/TipoCargo" },
+          "medidorNumero": { "type": "string" },
+          "usuarioId": { "type": "string", "nullable": true }
+        }
+      },
+      "RegistrarEnergiaDto": {
+        "type": "object",
+        "properties": {
+          "periodo": { "type": "string" },
+          "energiaInyectadaKwh": { "type": "number" },
+          "energiaGeneradaKwh": { "type": "number" },
+          "creditoGenerado": { "type": "number" },
+          "ahorroEpec": { "type": "number" }
+        },
+        "required": ["periodo"]
+      },
+      "RegistroEnergia": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "parqueId": { "type": "string" },
+          "periodo": { "type": "string" },
+          "energiaInyectadaKwh": { "type": "number", "nullable": true },
+          "energiaGeneradaKwh": { "type": "number", "nullable": true },
+          "creditoGenerado": { "type": "number", "nullable": true },
+          "ahorroEpec": { "type": "number", "nullable": true }
+        }
+      },
+      "RegistrarRoiDto": {
+        "type": "object",
+        "properties": {
+          "socioId": { "type": "string" },
+          "periodo": { "type": "string" },
+          "inversionMeta": { "type": "number" },
+          "creditoAcumulado": { "type": "number" },
+          "paybackEstimadoMeses": { "type": "number" },
+          "tir": { "type": "number" }
+        },
+        "required": ["periodo", "inversionMeta", "creditoAcumulado"]
+      },
+      "RegistroRoi": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "parqueId": { "type": "string" },
+          "socioId": { "type": "string", "nullable": true },
+          "periodo": { "type": "string" },
+          "inversionMeta": { "type": "number" },
+          "creditoAcumulado": { "type": "number" },
+          "paybackEstimadoMeses": { "type": "number", "nullable": true },
+          "tir": { "type": "number", "nullable": true }
+        }
+      },
+      "RegistrarMantenimientoDto": {
+        "type": "object",
+        "properties": {
+          "periodo": { "type": "string" },
+          "cantidadMantenciones": { "type": "integer" },
+          "costosAsociados": { "type": "number" },
+          "detalle": { "type": "string" }
+        },
+        "required": ["periodo", "cantidadMantenciones", "costosAsociados"]
+      },
+      "RegistroMantenimiento": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "parqueId": { "type": "string" },
+          "periodo": { "type": "string" },
+          "cantidadMantenciones": { "type": "integer" },
+          "costosAsociados": { "type": "number" },
+          "detalle": { "type": "string", "nullable": true }
+        }
+      },
+      "UltimaEjecucionDto": {
+        "type": "object",
+        "properties": {
+          "inicio": { "type": "string", "format": "date-time" },
+          "fin": { "type": "string", "format": "date-time", "nullable": true },
+          "estado": { "$ref": "#/components/schemas/EstadoEjecucionSincronizacion" },
+          "registrosProcesados": { "type": "integer" },
+          "registrosOmitidos": { "type": "integer" }
+        }
+      },
+      "ConfiguracionSincronizacionDto": {
+        "type": "object",
+        "properties": {
+          "modelo": { "$ref": "#/components/schemas/ModeloSincronizado" },
+          "intervaloMs": { "type": "integer" },
+          "habilitado": { "type": "boolean" },
+          "ultimaEjecucion": { "$ref": "#/components/schemas/UltimaEjecucionDto" }
+        }
+      },
+      "ActualizarConfiguracionSincronizacionDto": {
+        "type": "object",
+        "properties": {
+          "intervaloMs": { "type": "integer", "minimum": 1 },
+          "habilitado": { "type": "boolean" }
+        }
+      },
+      "RegistroEjecucionSincronizacionDto": {
+        "type": "object",
+        "properties": {
+          "inicio": { "type": "string", "format": "date-time" },
+          "fin": { "type": "string", "format": "date-time", "nullable": true },
+          "estado": { "$ref": "#/components/schemas/EstadoEjecucionSincronizacion" },
+          "registrosProcesados": { "type": "integer" },
+          "registrosOmitidos": { "type": "integer" },
+          "mensajeError": { "type": "string", "nullable": true }
+        }
+      }
+    }
+  },
+  "security": [{ "bearerAuth": [] }],
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Registrar usuario",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RegisterDto" } } }
+        },
+        "responses": {
+          "201": {
+            "description": "Usuario creado",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Usuario" } } }
+          },
+          "409": { "description": "Email ya existe", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Login",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LoginDto" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "Login OK",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LoginResponse" } } }
+          },
+          "401": { "description": "Credenciales inválidas", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/usuarios": {
+      "get": {
+        "tags": ["Usuarios"],
+        "summary": "Listar usuarios (HINS_ADMIN)",
+        "responses": {
+          "200": {
+            "description": "Lista de usuarios",
+            "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Usuario" } } } }
+          }
+        }
+      }
+    },
+    "/usuarios/me": {
+      "get": {
+        "tags": ["Usuarios"],
+        "summary": "Usuario autenticado actual",
+        "responses": {
+          "200": {
+            "description": "Usuario actual",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UsuarioMe" } } }
+          },
+          "404": { "description": "No encontrado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/usuarios/{id}": {
+      "get": {
+        "tags": ["Usuarios"],
+        "summary": "Obtener usuario por id (HINS_ADMIN)",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Usuario", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Usuario" } } } },
+          "404": { "description": "No encontrado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      },
+      "patch": {
+        "tags": ["Usuarios"],
+        "summary": "Actualizar usuario (HINS_ADMIN)",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateUsuarioDto" } } }
+        },
+        "responses": {
+          "200": { "description": "Usuario actualizado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Usuario" } } } }
+        }
+      },
+      "delete": {
+        "tags": ["Usuarios"],
+        "summary": "Baja lógica de usuario (HINS_ADMIN)",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": {
+            "description": "Usuario desactivado",
+            "content": { "application/json": { "schema": { "type": "object", "properties": { "id": { "type": "string" }, "activo": { "type": "boolean", "enum": [false] } } } } }
+          }
+        }
+      }
+    },
+    "/proyectos": {
+      "post": {
+        "tags": ["Proyectos"],
+        "summary": "Crear proyecto (HINS_ADMIN)",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateProyectoDto" } } }
+        },
+        "responses": {
+          "201": { "description": "Proyecto creado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Proyecto" } } } }
+        }
+      },
+      "get": {
+        "tags": ["Proyectos"],
+        "summary": "Listar proyectos (HINS_ADMIN)",
+        "responses": {
+          "200": { "description": "Lista de proyectos", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Proyecto" } } } } }
+        }
+      }
+    },
+    "/proyectos/{proyectoId}/parques": {
+      "get": {
+        "tags": ["Parques"],
+        "summary": "Listar parques de un proyecto (HINS_ADMIN, GDD_OWNER, AGC)",
+        "parameters": [{ "name": "proyectoId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Lista de parques del proyecto (0, 1 o N)", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Parque" } } } } },
+          "403": { "description": "Rol no autorizado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "404": { "description": "Proyecto no encontrado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/parques": {
+      "post": {
+        "tags": ["Parques"],
+        "summary": "Crear parque (HINS_ADMIN)",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateParqueDto" } } }
+        },
+        "responses": {
+          "201": { "description": "Parque creado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Parque" } } } }
+        }
+      }
+    },
+    "/parques/{id}": {
+      "get": {
+        "tags": ["Parques"],
+        "summary": "Obtener parque por id (HINS_ADMIN, GDD_OWNER, AGC)",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Parque", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Parque" } } } },
+          "404": { "description": "No encontrado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/parques/{parqueId}/socios": {
+      "post": {
+        "tags": ["Socios"],
+        "summary": "Crear socio (HINS_ADMIN, AGC)",
+        "parameters": [{ "name": "parqueId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateSocioDto" } } }
+        },
+        "responses": {
+          "201": { "description": "Socio creado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Socio" } } } }
+        }
+      },
+      "get": {
+        "tags": ["Socios"],
+        "summary": "Listar socios de un parque (HINS_ADMIN, AGC)",
+        "parameters": [{ "name": "parqueId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Lista de socios", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Socio" } } } } }
+        }
+      }
+    },
+    "/parques/{parqueId}/dispositivos": {
+      "get": {
+        "tags": ["Dispositivos"],
+        "summary": "Listar dispositivos de un parque (HINS_ADMIN, GDD_OWNER, AGC, SOCIO scoped a su parque)",
+        "parameters": [{ "name": "parqueId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": {
+            "description": "Lista de dispositivos, ordenada por ultimaSincronizacion descendente",
+            "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Dispositivo" } } } }
+          },
+          "403": { "description": "Sin acceso al parque (rol no autorizado, o Socio sin participación)", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "404": { "description": "Parque no encontrado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/parques/{parqueId}/alarmas": {
+      "get": {
+        "tags": ["Alarmas"],
+        "summary": "Listar alarmas de un parque (HINS_ADMIN, GDD_OWNER, AGC, SOCIO scoped a su parque)",
+        "parameters": [
+          { "name": "parqueId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "estado", "in": "query", "required": false, "schema": { "$ref": "#/components/schemas/EstadoAlarma" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de alarmas, ordenada por fechaGenerada descendente",
+            "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Alarma" } } } }
+          },
+          "403": { "description": "Sin acceso al parque (rol no autorizado, o Socio sin participación)", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "404": { "description": "Parque no encontrado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/parques/{parqueId}/energia": {
+      "post": {
+        "tags": ["Energia"],
+        "summary": "Registrar energía (HINS_ADMIN)",
+        "parameters": [{ "name": "parqueId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RegistrarEnergiaDto" } } }
+        },
+        "responses": {
+          "201": { "description": "Registro creado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RegistroEnergia" } } } }
+        }
+      },
+      "get": {
+        "tags": ["Energia"],
+        "summary": "Listar registros de energía (HINS_ADMIN, GDD_OWNER, AGC, SOCIO scoped a su parque)",
+        "parameters": [{ "name": "parqueId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Lista de registros", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/RegistroEnergia" } } } } }
+        }
+      }
+    },
+    "/parques/{parqueId}/roi": {
+      "post": {
+        "tags": ["ROI"],
+        "summary": "Registrar ROI (HINS_ADMIN)",
+        "parameters": [{ "name": "parqueId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RegistrarRoiDto" } } }
+        },
+        "responses": {
+          "201": { "description": "Registro creado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RegistroRoi" } } } }
+        }
+      },
+      "get": {
+        "tags": ["ROI"],
+        "summary": "Listar registros de ROI (HINS_ADMIN, GDD_OWNER, AGC)",
+        "parameters": [{ "name": "parqueId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Lista de registros", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/RegistroRoi" } } } } }
+        }
+      }
+    },
+    "/parques/{parqueId}/mantenimiento": {
+      "post": {
+        "tags": ["Mantenimiento"],
+        "summary": "Registrar mantenimiento (HINS_ADMIN, AGC; excluye SOCIO)",
+        "parameters": [{ "name": "parqueId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RegistrarMantenimientoDto" } } }
+        },
+        "responses": {
+          "201": { "description": "Registro creado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RegistroMantenimiento" } } } }
+        }
+      },
+      "get": {
+        "tags": ["Mantenimiento"],
+        "summary": "Listar registros de mantenimiento (HINS_ADMIN, GDD_OWNER, AGC, SOCIO scoped a su parque)",
+        "parameters": [{ "name": "parqueId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Lista de registros", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/RegistroMantenimiento" } } } } }
+        }
+      }
+    },
+    "/sincronizacion/configuraciones": {
+      "get": {
+        "tags": ["Sincronizacion"],
+        "summary": "Listar configuraciones de sincronización (HINS_ADMIN)",
+        "responses": {
+          "200": { "description": "Lista de configuraciones", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/ConfiguracionSincronizacionDto" } } } } }
+        }
+      }
+    },
+    "/sincronizacion/configuraciones/{modelo}": {
+      "patch": {
+        "tags": ["Sincronizacion"],
+        "summary": "Actualizar configuración de sincronización (HINS_ADMIN)",
+        "parameters": [
+          { "name": "modelo", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/ModeloSincronizado" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ActualizarConfiguracionSincronizacionDto" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "Configuración actualizada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "modelo": { "$ref": "#/components/schemas/ModeloSincronizado" },
+                    "intervaloMs": { "type": "integer" },
+                    "habilitado": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sincronizacion/logs": {
+      "get": {
+        "tags": ["Sincronizacion"],
+        "summary": "Listar logs de ejecución (HINS_ADMIN)",
+        "parameters": [
+          { "name": "modelo", "in": "query", "required": true, "schema": { "$ref": "#/components/schemas/ModeloSincronizado" } },
+          { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 } }
+        ],
+        "responses": {
+          "200": { "description": "Lista de logs", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/RegistroEjecucionSincronizacionDto" } } } } }
+        }
+      }
+    }
+  }
+}

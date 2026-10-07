@@ -1,14 +1,26 @@
 // components/gdd/GddMantenimientoView.tsx
 import { ParkMantenimientoView } from "@/components/mantenimiento/ParkMantenimientoView"
-import { gddMantenimientoHistorialMock } from "@/data/mantenimiento-mock"
-import { parkName } from "@/data/gdd-performance-mock"
+import type { Proyecto } from "@/lib/api/types"
+import { listMantenimiento } from "@/lib/api/mantenimiento"
 
-export function GddMantenimientoView() {
+interface GddMantenimientoViewProps {
+  proyecto: Proyecto
+  parqueId: string
+  parqueNombreExterno: string | null
+}
+
+export async function GddMantenimientoView({
+  proyecto,
+  parqueId,
+  parqueNombreExterno,
+}: GddMantenimientoViewProps) {
+  const data = await listMantenimiento(parqueId)
+
   return (
     <ParkMantenimientoView
-      parkName={parkName}
+      parkName={parqueNombreExterno ?? proyecto.nombre}
       modelType="GDD"
-      data={gddMantenimientoHistorialMock}
+      data={data}
     />
   )
 }

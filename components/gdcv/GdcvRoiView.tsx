@@ -29,8 +29,16 @@ import {
   formatCurrency,
   formatRoiFromUsdResponsive,
 } from "@/lib/format-currency"
+import type { RealRoiKpis } from "@/lib/roi-kpis"
 
-export function GdcvRoiView() {
+interface GdcvRoiViewProps {
+  /** KPIs reales derivados de RegistroRoi, o null si el parque aún no tiene
+   * registros. "Recupero Estimado", "Plazo" y la curva de proyección siguen
+   * en mock — sin equivalente en el contrato (ver data-model.md). */
+  realKpis: RealRoiKpis | null
+}
+
+export function GdcvRoiView({ realKpis }: GdcvRoiViewProps) {
   const searchParams = useSearchParams()
   const currency = (searchParams.get("currency") ?? "usd") as GddRoiCurrency
   const isMobile = useIsMobile()
@@ -45,15 +53,28 @@ export function GdcvRoiView() {
       desktopMode
     )
 
-  const pct = gdcvRoiKpis.porcentajeRecuperado
-  const totalInvertidoCompact = fmt(gdcvRoiKpis.totalInvertido, "axis")
+  const kpis = {
+    ...gdcvRoiKpis,
+    ...(realKpis
+      ? {
+          totalInvertido: realKpis.totalInvertido,
+          inversionRecuperada: realKpis.inversionRecuperada,
+          porcentajeRecuperado: realKpis.porcentajeRecuperado,
+          pendienteRecuperar: realKpis.pendienteRecuperar,
+          tir: realKpis.tir,
+        }
+      : {}),
+  }
+
+  const pct = kpis.porcentajeRecuperado
+  const totalInvertidoCompact = fmt(kpis.totalInvertido, "axis")
 
   return (
     <div className="flex flex-1 flex-col gap-4 sm:gap-6">
       <div className="grid min-h-0 grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-[1fr_1fr_auto]">
         <KpiWithAsset
           label="Inversión Recuperada"
-          value={fmt(gdcvRoiKpis.inversionRecuperada)}
+          value={fmt(kpis.inversionRecuperada)}
           asset={
             <KpiProgressBar
               percent={pct}
@@ -61,34 +82,34 @@ export function GdcvRoiView() {
                 left: { value: formatCurrency(0, currency) },
                 right: {
                   label: "Total Invertido:",
-                  value: fmt(gdcvRoiKpis.totalInvertido),
+                  value: fmt(kpis.totalInvertido),
                 },
               }}
             />
           }
           bottomLabel="Pendiente de recuperar"
-          bottomValue={fmt(gdcvRoiKpis.pendienteRecuperar)}
+          bottomValue={fmt(kpis.pendienteRecuperar)}
         />
 
         <KpiWithTimeline
           label="Recupero Estimado"
-          value={gdcvRoiKpis.recuperoEstimado}
+          value={kpis.recuperoEstimado}
           metricBadge="Payback"
-          timelineData={gdcvRoiKpis.timeline}
+          timelineData={kpis.timeline}
         />
 
         <Card className="flex h-full min-h-0 flex-col bg-white p-6 shadow-xs ring-0 rounded-xl">
           <div className="grid min-h-0 flex-1 grid-cols-3 gap-4 lg:grid-cols-1 lg:gap-6 lg:content-between">
             <KpiSecondaryMetric
               label="TIR"
-              value={gdcvRoiKpis.tir}
+              value={kpis.tir}
               size="standard"
               valueClassName="text-green-600"
               className="min-w-0"
             />
             <KpiSecondaryMetric
               label="Plazo"
-              value={gdcvRoiKpis.plazo}
+              value={kpis.plazo}
               size="standard"
               className="min-w-0 lg:items-start lg:text-left items-center text-center"
             />
@@ -117,7 +138,7 @@ export function GdcvRoiView() {
       >
         <ROIProjectionChart
           data={gdcvRoiProjectionData}
-          inversionMeta={gdcvRoiKpis.totalInvertido}
+          inversionMeta={kpis.totalInvertido}
           fechaHoy={GDCV_ROI_FECHA_HOY}
           showRangeChips={true}
           showScenarioBands={true}

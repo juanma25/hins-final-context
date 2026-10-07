@@ -2,8 +2,10 @@
 
 "use client"
 
-import { useState } from "react"
+import { useState, useTransition } from "react"
+import { useRouter } from "next/navigation"
 
+import { createProyectoAction } from "@/app/main/actions"
 import { Button } from "@/components/ui/button"
 import { ModelBadge, type ParkModel } from "@/components/ui/model-badge"
 import {
@@ -16,7 +18,8 @@ import {
 import { Input } from "@/components/ui/input"
 import { InputWithIconButton } from "@/components/ui/input-with-icon-button"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-import { PROJECT_TYPES, type NewProjectFormData, type ProjectType } from "@/data/new-project-mock"
+import { PROJECT_TYPES, type NewProjectFormData } from "@/data/new-project-mock"
+import type { ModeloNegocio } from "@/lib/api/types"
 import { ParkingMeter } from "lucide-react"
 
 interface NewProjectDialogProps {
@@ -24,17 +27,17 @@ interface NewProjectDialogProps {
   onOpenChange: (open: boolean) => void
 }
 
+const EMPTY_FORM: NewProjectFormData = { nombre: "", modelo: undefined, ubicacion: "" }
+
 export function NewProjectDialog({ open, onOpenChange }: NewProjectDialogProps) {
-  const [formData, setFormData] = useState<NewProjectFormData>({
-    nombre: "",
-    tipo: undefined as ProjectType | undefined,
-  })
+  const router = useRouter()
+  const [formData, setFormData] = useState<NewProjectFormData>(EMPTY_FORM)
+  const [error, setError] = useState<string | null>(null)
+  const [isPending, startTransition] = useTransition()
 
   const handleReset = () => {
-    setFormData({
-      nombre: "",
-      tipo: undefined,
-    })
+    setFormData(EMPTY_FORM)
+    setError(null)
   }
 
   const handleOpenChange = (isOpen: boolean) => {
@@ -45,32 +48,48 @@ export function NewProjectDialog({ open, onOpenChange }: NewProjectDialogProps) 
   }
 
   const handleCreate = () => {
-    // Validación básica
     if (!formData.nombre.trim()) {
-      alert("Por favor ingresa el nombre del parque")
+      setError("Por favor ingresa el nombre del parque")
       return
     }
-    if (formData.tipo === "GDD" && !formData.medidor?.trim()) {
-      alert("Por favor ingresa el número de medidor")
+    if (!formData.ubicacion.trim()) {
+      setError("Por favor ingresa la ubicación del parque")
+      return
+    }
+    if (!formData.modelo) {
+      setError("Por favor selecciona el tipo de parque")
+      return
+    }
+    if (formData.modelo === "GDD" && !formData.medidor?.trim()) {
+      setError("Por favor ingresa el número de medidor")
       return
     }
 
-    // TODO: Wire to backend API
-    // Expected request: POST /api/projects
-    // Payload: { nombre, tipo, medidor? }
-    // Expected response: { id, nombre, tipo, medidor?, estado }
-    // On success: invalidate projects cache, close dialog, navigate to /main
-    // On error: show toast notification
-    console.log("Crear proyecto:", formData)
-
-    // Cerrar dialog
-    handleOpenChange(false)
+    setError(null)
+    startTransition(async () => {
+      const result = await createProyectoAction({
+        nombre: formData.nombre.trim(),
+        modelo: formData.modelo as ModeloNegocio,
+        ubicacion: formData.ubicacion.trim(),
+      })
+      if (result.error) {
+        setError(result.error)
+        return
+      }
+      router.refresh()
+      if (result.parqueError) {
+        setError(`El proyecto se creó, pero el parque no pudo generarse: ${result.parqueError}`)
+        return
+      }
+      handleOpenChange(false)
+    })
   }
 
   const isFormValid =
     formData.nombre.trim() !== "" &&
-    formData.tipo &&
-    (formData.tipo === "GDCV" || (formData.tipo === "GDD" && formData.medidor?.trim()))
+    formData.ubicacion.trim() !== "" &&
+    formData.modelo &&
+    (formData.modelo !== "GDD" || formData.medidor?.trim())
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -94,6 +113,20 @@ export function NewProjectDialog({ open, onOpenChange }: NewProjectDialogProps) 
             />
           </div>
 
+          {/* Ubicación */}
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              Ubicación
+            </label>
+            <Input
+              placeholder="Ej: Río Cuarto, Córdoba"
+              value={formData.ubicacion}
+              onChange={(e) =>
+                setFormData({ ...formData, ubicacion: e.target.value })
+              }
+            />
+          </div>
+
           {/* Tipo de Parque */}
           <div className="flex flex-col gap-3">
             <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
@@ -101,10 +134,10 @@ export function NewProjectDialog({ open, onOpenChange }: NewProjectDialogProps) 
             </label>
             <ToggleGroup
               type="single"
-              value={formData.tipo}
+              value={formData.modelo}
               onValueChange={(value) => {
                 if (value) {
-                  setFormData({ ...formData, tipo: value as ProjectType })
+                  setFormData({ ...formData, modelo: value as ModeloNegocio })
                 }
               }}
               variant="outline"
@@ -120,7 +153,7 @@ export function NewProjectDialog({ open, onOpenChange }: NewProjectDialogProps) 
           </div>
 
           {/* N° de Medidor (condicional - GDD) */}
-          {formData.tipo === "GDD" && (
+          {formData.modelo === "GDD" && (
             <InputWithIconButton
               label="N° de Medidor"
               icon={ParkingMeter}
@@ -138,7 +171,7 @@ export function NewProjectDialog({ open, onOpenChange }: NewProjectDialogProps) 
           )}
 
           {/* Cantidad de Socios (condicional - GDCV) */}
-          {formData.tipo === "GDCV" && (
+          {formData.modelo === "GDCV" && (
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                 Cantidad de Socios
@@ -152,17 +185,19 @@ export function NewProjectDialog({ open, onOpenChange }: NewProjectDialogProps) 
               />
             </div>
           )}
+
+          {error ? <p className="text-sm text-destructive">{error}</p> : null}
         </div>
 
         <DialogFooter>
           <Button
             variant="default"
             onClick={handleCreate}
-            disabled={!isFormValid}
+            disabled={!isFormValid || isPending}
           >
-            Crear
+            {isPending ? "Creando..." : "Crear"}
           </Button>
-          <Button variant="outline" onClick={() => handleOpenChange(false)}>
+          <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={isPending}>
             Cancelar
           </Button>
         </DialogFooter>

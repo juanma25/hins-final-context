@@ -23,11 +23,18 @@ import { getChartBarDensity } from "@/lib/chart-bar-density"
 import { formatChartPeriodTooltipLabel } from "@/lib/format-chart-period-tooltip"
 import { cn } from "@/lib/utils"
 
-export type ParkEnergyTotalRow = { label: string; generated: number }
+export type ParkEnergyTotalRow = { label: string; generated: number; hasData?: boolean }
 
 export type ParkEnergyShareRow = ParkEnergyTotalRow & {
   miParte: number
   resto: number
+}
+
+/** Fila comparativa DIMMs (principal) vs Huawei (secundaria) — ver specs/012-comparativa-dimms-huawei. */
+export type ParkEnergyComparativeRow = {
+  label: string
+  dimmsKwh: number | null
+  huaweiKwh: number | null
 }
 
 type ParkEnergyBarChartBaseProps = {
@@ -45,11 +52,20 @@ type ParkEnergyBarChartShareProps = ParkEnergyBarChartBaseProps & {
   data: ParkEnergyShareRow[]
 }
 
+type ParkEnergyBarChartComparativeProps = ParkEnergyBarChartBaseProps & {
+  variant: "comparative"
+  data: ParkEnergyComparativeRow[]
+}
+
 export type ParkEnergyBarChartProps =
   | ParkEnergyBarChartTotalProps
   | ParkEnergyBarChartShareProps
+  | ParkEnergyBarChartComparativeProps
 
-function barFill(index: number, total: number): string {
+function barFill(index: number, total: number, hasData?: boolean): string {
+  if (hasData === false) {
+    return "var(--border)"
+  }
   if (index === total - 1) {
     return "var(--chart-1)"
   }
@@ -241,6 +257,14 @@ function ParkEnergyBarChartTotal({
                     typeof item?.payload?.label === "string"
                       ? data.findIndex((d) => d.label === item.payload?.label)
                       : -1
+                  const row = index >= 0 ? data[index] : undefined
+
+                  if (row?.hasData === false) {
+                    return (
+                      <span className="text-muted-foreground">Sin dato</span>
+                    )
+                  }
+
                   const delta =
                     index > 0
                       ? numericValue - (data[index - 1]?.generated ?? 0)
@@ -273,8 +297,8 @@ function ParkEnergyBarChartTotal({
           background={false}
           minPointSize={0}
         >
-          {data.map((_, index) => (
-            <Cell key={`cell-${index}`} fill={barFill(index, n)} />
+          {data.map((row, index) => (
+            <Cell key={`cell-${index}`} fill={barFill(index, n, row.hasData)} />
           ))}
           {density.showBarLabels ? (
             <LabelList
@@ -387,9 +411,131 @@ function ParkEnergyBarChartShare({
   )
 }
 
+function ComparativeTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean
+  payload?: { dataKey?: string; value?: number }[]
+  label?: string | number
+}) {
+  if (!active || !payload?.length) return null
+
+  const dimms = payload.find((p) => p.dataKey === "dimmsKwh")
+  const huawei = payload.find((p) => p.dataKey === "huaweiKwh")
+
+  return (
+    <div className="grid min-w-[10rem] gap-2 rounded-lg border border-border/50 bg-background px-2.5 py-1.5 text-xs shadow-xl">
+      <p className="font-medium text-foreground">
+        {formatChartPeriodTooltipLabel(String(label ?? ""))}
+      </p>
+      <div className="grid gap-1.5">
+        <div className="flex items-center justify-between gap-4">
+          <span className="flex items-center gap-1.5 text-muted-foreground">
+            <span className="size-2 shrink-0 rounded-sm" style={{ backgroundColor: "var(--chart-1)" }} />
+            Medidor principal
+          </span>
+          <span className="font-mono font-medium tabular-nums text-foreground">
+            {typeof dimms?.value === "number" ? formatKwhCompact(dimms.value) : "Sin dato"}
+          </span>
+        </div>
+        <div className="flex items-center justify-between gap-4">
+          <span className="flex items-center gap-1.5 text-muted-foreground">
+            <span className="size-2 shrink-0 rounded-sm" style={{ backgroundColor: "var(--chart-1-muted)" }} />
+            FusionSolar
+          </span>
+          <span className="font-mono font-medium tabular-nums text-foreground">
+            {typeof huawei?.value === "number" ? formatKwhCompact(huawei.value) : "Sin dato"}
+          </span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ParkEnergyBarChartComparative({
+  data,
+  chartConfig,
+  className,
+}: ParkEnergyBarChartComparativeProps) {
+  const isMobile = useIsMobile()
+  const n = data.length
+  const density = getChartBarDensity(n, isMobile)
+
+  return (
+    <ChartContainer
+      config={chartConfig}
+      className={cn(
+        "aspect-auto h-[300px] min-h-[300px] w-full [&_.recharts-responsive-container]:!h-full",
+        className
+      )}
+    >
+      <BarChart
+        data={data}
+        margin={{
+          left: 4,
+          right: 8,
+          top: 8,
+          bottom: density.xAxisAngle ? 8 : 4,
+        }}
+      >
+        <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-border/60" />
+        <XAxis
+          dataKey="label"
+          tickLine={false}
+          axisLine={false}
+          tickMargin={8}
+          angle={density.xAxisAngle}
+          textAnchor={density.xAxisAngle ? "end" : "middle"}
+          height={density.xAxisHeight}
+          interval={density.xAxisInterval}
+          className="text-muted-foreground text-[10px] sm:text-xs"
+        />
+        <YAxis
+          tickLine={false}
+          axisLine={false}
+          tickMargin={8}
+          className="text-muted-foreground"
+          tickFormatter={(v) => `${v}`}
+        />
+        {density.showTooltip ? (
+          <Tooltip
+            content={({ active, payload, label }) => (
+              <ComparativeTooltip
+                active={active}
+                payload={payload as unknown as { dataKey?: string; value?: number }[]}
+                label={label}
+              />
+            )}
+            cursor={{ fill: "rgba(0,0,0,0.05)" }}
+          />
+        ) : null}
+        <Bar
+          dataKey="dimmsKwh"
+          name="Medidor principal"
+          fill="var(--chart-1)"
+          radius={n <= 16 ? [6, 6, 0, 0] : 0}
+          barSize={density.barSize}
+        />
+        <Bar
+          dataKey="huaweiKwh"
+          name="FusionSolar"
+          fill="var(--chart-1-muted)"
+          radius={n <= 16 ? [6, 6, 0, 0] : 0}
+          barSize={density.barSize}
+        />
+      </BarChart>
+    </ChartContainer>
+  )
+}
+
 export function ParkEnergyBarChart(props: ParkEnergyBarChartProps) {
   if (props.variant === "share") {
     return <ParkEnergyBarChartShare {...props} />
+  }
+  if (props.variant === "comparative") {
+    return <ParkEnergyBarChartComparative {...props} />
   }
   return <ParkEnergyBarChartTotal {...props} />
 }

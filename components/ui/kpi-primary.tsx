@@ -13,10 +13,19 @@ interface KpiPrimaryProps {
   unit?: string
   delta: string
   sparklineData?: { value: number }[]
+  /**
+   * Valor de referencia secundaria (comparativa, ej. Huawei/FusionSolar)
+   * mostrado junto al valor principal — ver specs/012-comparativa-dimms-huawei.
+   */
+  comparativeLabel?: string
+  comparativeValue?: string
+  /** true cuando la fuente principal no tiene dato para este período (distinto de "sin medidor"/"error", ver caller). */
+  primaryUnavailable?: boolean
 }
 
 export function KpiPrimary({
   icon, label, value, unit, delta, sparklineData,
+  comparativeLabel, comparativeValue, primaryUnavailable,
 }: KpiPrimaryProps) {
   const indexed = sparklineData?.map((d, i) => ({ i, value: d.value })) ?? []
 
@@ -27,10 +36,22 @@ export function KpiPrimary({
           <IconBadge icon={icon} size="lg" />
           <div className="flex flex-col gap-1 flex-1">
             <p className="text-lg font-semibold text-[#0A0A0A]">{label}</p>
-            <p className="text-4xl font-bold text-[#0A0A0A]">
-              {value}
-              {unit && <span className="text-xl font-semibold ml-1">{unit}</span>}
-            </p>
+            {primaryUnavailable ? (
+              <p className="text-sm text-muted-foreground">
+                Dato principal no disponible
+              </p>
+            ) : (
+              <p className="text-4xl font-bold text-[#0A0A0A]">
+                {value}
+                {unit && <span className="text-xl font-semibold ml-1">{unit}</span>}
+              </p>
+            )}
+            {comparativeValue && (
+              <p className="text-sm text-muted-foreground">
+                {comparativeLabel ?? "Comparativa"}: {comparativeValue}
+                {unit && ` ${unit}`}
+              </p>
+            )}
           </div>
         </div>
         {indexed.length > 0 && (

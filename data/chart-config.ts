@@ -59,6 +59,18 @@ export const gdcvEnergyBarChartConfig = {
   },
 } satisfies ChartConfig
 
+/** Comparativa DIMMs (principal) vs Huawei/FusionSolar (secundaria) — ver specs/012-comparativa-dimms-huawei. */
+export const energiaComparativaChartConfig = {
+  dimmsKwh: {
+    label: "Medidor principal",
+    color: "var(--chart-1)",
+  },
+  huaweiKwh: {
+    label: "FusionSolar",
+    color: "var(--chart-1-muted)",
+  },
+} satisfies ChartConfig
+
 /** Apilado cuotaparte — mismos tokens que Monetary (green base + amber tope). */
 export const parkEnergyShareChartConfig = {
   resto: {
@@ -74,6 +86,14 @@ export const parkEnergyShareChartConfig = {
 export const dailyGenerationChartConfig = {
   kw: {
     label: "Generación",
+    color: "var(--chart-1)",
+  },
+} satisfies ChartConfig
+
+/** Energía generada por hora, real (GET /parques/{id}/energia?periodo=AAAA-MM-DD) — pestaña DIA. */
+export const dailyEnergyMeasuresChartConfig = {
+  kwh: {
+    label: "Generada",
     color: "var(--chart-1)",
   },
 } satisfies ChartConfig

@@ -21,10 +21,11 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 import { sheetContentClassName } from "@/lib/sheet-layout"
 import { BellIcon, SearchIcon } from "lucide-react"
 
-import { parkName } from "@/data/gdd-performance-mock"
+import { useDashboardParkName } from "@/hooks/use-dashboard-park-name"
 
 export function GddHeader() {
   const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const parkName = useDashboardParkName("Parque GDD")
 
   return (
     <header className="sticky top-0 z-10 shrink-0 bg-background shadow-xs">

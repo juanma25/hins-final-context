@@ -1,7 +1,7 @@
 // components/gdcv/SociosTable.tsx
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import {
   flexRender,
   getCoreRowModel,
@@ -17,6 +17,8 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { CreateSocioDialog } from "@/components/gdcv/CreateSocioDialog"
+import { SocioHistoricoDialog } from "@/components/gdcv/SocioHistoricoDialog"
 import { Heading } from "@/components/ui/heading"
 import {
   DropdownMenu,
@@ -47,6 +49,7 @@ import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
+  HistoryIcon,
   MoreHorizontalIcon,
   PlusIcon,
   ShareIcon,
@@ -111,7 +114,8 @@ function sortableHeader(
 
 // ─── Column definitions ───────────────────────────────────────────────────────
 
-const columns: ColumnDef<SocioRow>[] = [
+function createColumns(onHistoricoClick: (socio: SocioRow) => void): ColumnDef<SocioRow>[] {
+  return [
   {
     accessorKey: "nombre",
     enableHiding: false,
@@ -220,7 +224,21 @@ const columns: ColumnDef<SocioRow>[] = [
     enableSorting: false,
     header: "",
     cell: ({ row }) => (
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="size-8 shadow-xs"
+          aria-label={`Ver histórico — ${row.original.nombre}`}
+          title="Ver histórico"
+          onClick={(e) => {
+            e.stopPropagation()
+            onHistoricoClick(row.original)
+          }}
+        >
+          <HistoryIcon className="size-4" aria-hidden />
+        </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -259,12 +277,18 @@ const columns: ColumnDef<SocioRow>[] = [
       </div>
     ),
   },
-]
+  ]
+}
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 interface SociosTableProps {
+  /** Parque activo — el alta vía "Nuevo Socio" se registra contra este parque. */
+  parqueId: string
   data: SocioRow[]
+  /** `true` cuando la consulta de socios al backend falló — distinto de `data: []` (sin socios registrados). */
+  loadFailed?: boolean
+  onRetry?: () => void
   onRowClick: (socio: SocioRow) => void
   /** Medidor puntual dentro del sheet intermedio → SocioDetailSheet. */
   onMedidorClick?: (socio: SocioRow, medidor: MedidorDetalle) => void
@@ -274,7 +298,10 @@ interface SociosTableProps {
 }
 
 export function SociosTable({
+  parqueId,
   data,
+  loadFailed = false,
+  onRetry,
   onRowClick,
   onMedidorClick,
   medidoresSheetSocio,
@@ -284,6 +311,13 @@ export function SociosTable({
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [internalMedidoresSheet, setInternalMedidoresSheet] =
     useState<SocioRow | null>(null)
+  const [createSocioOpen, setCreateSocioOpen] = useState(false)
+  const [historicoSocio, setHistoricoSocio] = useState<SocioRow | null>(null)
+
+  const columns = useMemo(
+    () => createColumns((socio) => setHistoricoSocio(socio)),
+    []
+  )
 
   const isMedidoresSheetControlled = onMedidoresSheetOpenChange !== undefined
   const medidoresSheet = isMedidoresSheetControlled
@@ -360,6 +394,7 @@ export function SociosTable({
             size="icon"
             className="md:w-auto md:px-2.5 md:gap-2 shadow-xs"
             title="Nuevo Socio"
+            onClick={() => setCreateSocioOpen(true)}
           >
             <PlusIcon className="size-4" aria-hidden />
             <span className="hidden md:inline">Nuevo Socio</span>
@@ -391,7 +426,22 @@ export function SociosTable({
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows.length > 0 ? (
+            {loadFailed ? (
+              <TableRow>
+                <TableCell colSpan={columns.length} className="h-24 text-center">
+                  <div className="flex flex-col items-center justify-center gap-3">
+                    <p className="text-sm text-muted-foreground">
+                      No se pudo cargar el listado de socios.
+                    </p>
+                    {onRetry ? (
+                      <Button variant="outline" size="sm" onClick={onRetry}>
+                        Reintentar
+                      </Button>
+                    ) : null}
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : table.getRowModel().rows.length > 0 ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
@@ -423,7 +473,7 @@ export function SociosTable({
                   colSpan={columns.length}
                   className="h-24 text-center text-sm text-muted-foreground"
                 >
-                  Sin resultados.
+                  Sin socios registrados para este parque.
                 </TableCell>
               </TableRow>
             )}
@@ -510,6 +560,22 @@ export function SociosTable({
           </div>
         )}
       </SheetContentDetail>
+
+      <CreateSocioDialog
+        parqueId={parqueId}
+        open={createSocioOpen}
+        onOpenChange={setCreateSocioOpen}
+      />
+
+      {historicoSocio ? (
+        <SocioHistoricoDialog
+          parqueId={parqueId}
+          socioId={historicoSocio.id}
+          socioNombre={historicoSocio.nombre}
+          open={!!historicoSocio}
+          onOpenChange={(open) => { if (!open) setHistoricoSocio(null) }}
+        />
+      ) : null}
     </>
   )
 }

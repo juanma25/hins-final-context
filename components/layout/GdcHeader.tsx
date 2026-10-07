@@ -16,9 +16,11 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { SearchIcon } from "lucide-react"
 
-import { gdcParkName } from "@/data/mantenimiento-mock"
+import { useDashboardParkName } from "@/hooks/use-dashboard-park-name"
 
 export function GdcHeader() {
+  const gdcParkName = useDashboardParkName("Parque GDC")
+
   return (
     <header className="sticky top-0 z-40 shrink-0 bg-white shadow-xs">
       <div className="flex h-14 items-center justify-between gap-4 px-6">
